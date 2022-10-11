@@ -1,0 +1,100 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+  # use-connector-resources configures this KafkaConnect
+  # to use KafkaConnector resources to avoid
+  # needing to call the Connect REST API directly
+    strimzi.io/use-connector-resources: "false"
+spec:
+  version: 3.1.0
+  replicas: 1
+  bootstrapServers: my-cluster-kafka-bootstrap:9093
+  tls:
+    trustedCertificates:
+      - secretName: my-cluster-cluster-ca-cert
+        certificate: ca.crt
+  config:
+    group.id: connect-cluster
+    offset.storage.topic: connect-cluster-offsets
+    config.storage.topic: connect-cluster-configs
+    status.storage.topic: connect-cluster-status
+    # -1 means it will use the default replication factor configured in the broker
+    config.storage.replication.factor: -1
+    offset.storage.replication.factor: -1
+    status.storage.replication.factor: -1
+
+  # image:  ghcr.io/joschne/kafka-http-sink-connector:1.0.18-snapshot
+  template:
+    pod:
+      # Secret to download the image built as specified under build
+      imagePullSecrets:
+        - name: github-docker-push-secret
+
+  # This starts a docker build container that
+  # creates a new kafka-connect docker image
+  # including the plugins in plugins
+  build:
+    output: # (2)
+      type: docker
+      # Location of built docker image
+      image: ghcr.io/joschne/kafka-connect:latest
+      # Secret to upload to registry (here a github PAT wirh packages.write permissions)
+      pushSecret: github-docker-push-secret
+    plugins: # (3)
+      # Found here https://mvnrepository.com/artifact/io.debezium/debezium-connector-postgres/1.9.2.Final
+      - name: debezium-postgres-connector
+        artifacts:
+          - type: tgz
+            url: https://repo1.maven.org/maven2/io/debezium/debezium-connector-postgres/1.9.2.Final/debezium-connector-postgres-1.9.2.Final-plugin.tar.gz
+            sha512sum: ec5ed6798c144107ef87559a55b819379d82c6cb62b030c99ba0c9ae89270e99cc630190ca03a65902cb92156a34ef1b5760f722065ab233932003fdd5ad3f38
+      # Found here https://mvnrepository.com/artifact/io.confluent/kafka-connect-avro-converter/7.1.1
+      # (listed as test dependency debezium-postgres-connector)
+      # adding dependencies as here: https://github.com/debezium/docker-images/blob/main/connect-base/1.9/Dockerfile
+      - name: avro
+        artifacts:
+          - type: jar
+            url: https://packages.confluent.io/maven/io/confluent/kafka-connect-avro-converter/7.1.1/kafka-connect-avro-converter-7.1.1.jar
+            sha512sum: 3879d2f3cae17d9aa9517efec6e5e0d5b354ff28d709f6e1b8ad7124ec196029fc4a699ed45751def21f0614a3dce2c6d2757ec2af34fdacc740c84513b64801
+          - type: jar
+            url: https://packages.confluent.io/maven/io/confluent/kafka-avro-serializer/7.1.1/kafka-avro-serializer-7.1.1.jar
+            sha512sum: a6eab5c7d1d1d4a66814fde0be4b55dbd061422a3a284897a5ea58d62d6aefd984cfedfaa1385ae164296ce654f1f95c9f0394d26a35190a5684554e337ff5f0
+          - type: jar
+            url: https://packages.confluent.io/maven/io/confluent/kafka-schema-registry-client/7.1.1/kafka-schema-registry-client-7.1.1.jar
+            sha512sum: 808507aa5bfb1d7a7ec3b6a11c788446af91156092ecbdeaad07864a14a9f499eccc9c40a0207050a51d216d01b56652c685efaaf70677f76743d03882eebb62
+          - type: jar
+            url: https://packages.confluent.io/maven/io/confluent/kafka-connect-avro-data/7.1.1/kafka-connect-avro-data-7.1.1.jar
+            sha512sum: 4410c0f9804459a53680fcd85a27ca1e72d9df2216465a77ffc4a2f803967cc7d2d8469abd72ce956f150a9f7e25e7f5b26b8ce2f7f034b4a45111ff03852a2a
+          - type: jar
+            url: https://repo1.maven.org/maven2/org/apache/avro/avro/1.11.0/avro-1.11.0.jar
+            sha512sum: d950e0f74142022f999afda7b4920d1eaa1407217b1958cbd43ff802300d6184ba85108fbc298bd98814d23a2e8ab4d9567a5c9f08edd9d395856144da6248da
+          - type: jar
+            url: https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar
+            sha512sum: c92d9a12547aab475e057955ad815fdfe92ff44c78383fa5af54b089f1bff5525126ef6aef93334f3bfc22e2fef4ad0d969f69384e978a83a55f011a53e7e471
+          - type: jar
+            url: https://packages.confluent.io/maven/io/confluent/common-config/7.1.1/common-config-7.1.1.jar
+            sha512sum: f83575a4bbe169864b6a3330737d785f406a7d6bd59d6f742b6485bc05752b02d4645fbf5f60ecdca39d3526e2fac94c30845fa957e4c056af72a30ae5bde9f7
+          - type: jar
+            url: https://packages.confluent.io/maven/io/confluent/common-utils/7.1.1/common-utils-7.1.1.jar
+            sha512sum: adc74d1ad7088f76271aff2470ef7a8649e76e8a1ed2a088ca0d3267f2649f333cc01ed76e61edaf095ed8c7c20aca9ee174518513ad12e6ea6f61b6d5977ae6
+
+
+
+
+      # - name: debezium-postgres-connector
+      #   artifacts:
+      #     - type: tgz
+      #       url: https://repo1.maven.org/maven2/io/debezium/debezium-connector-postgres/1.3.1.Final/debezium-connector-postgres-1.3.1.Final-plugin.tar.gz
+      #       sha512sum: 962a12151bdf9a5a30627eebac739955a4fd95a08d373b86bdcea2b4d0c27dd6e1edd5cb548045e115e33a9e69b1b2a352bee24df035a0447cb820077af00c03
+      # - name: http-connector
+      #   artifacts:
+      #     - type: zip
+      #       url: https://github.com/aiven/http-connector-for-apache-kafka/releases/download/v0.5.0/http-connector-for-apache-kafka-0.5.0.zip
+      #       sha512sum: 2fa74d76d48ff282bf6417ea5af8d8cb41fdf92f6d71bd13f4793dc72df7bb92b5252ea0a178ec3b6576e20d51dad9246076a6a0353521756cbbba9acb27a0e2
+      # - name: http-sink-aisantserver
+      #   artifacts:
+      #     - type: zip
+      #       url: https://github.com/asaintsever/kafka-connect-http-sink/releases/download/v1.0.0/asaintsever-http-sink-connector-1.0.0.zip
+      #       sha512sum: d9daac9739db8067f8d00aff04527c0a45a5372d5905352d343de46e3fb28dd75072ad2ffb3389e6406d243e9ccd53ddccace398706461e3d6bd25b5c9486ca7
+

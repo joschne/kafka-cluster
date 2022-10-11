@@ -1,0 +1,34 @@
+# # Inspired by
+# # https://github.com/gkoenig/strimzi-jaeger-eval/blob/main/KafkaConnect-Debezium-Postgresql.md
+
+# apiVersion: kafka.strimzi.io/v1beta2
+# kind: KafkaConnector
+# metadata:
+#   name: dev-db-source-connector-v1
+#   namespace: kafka
+#   labels: 
+#     strimzi.io/cluster: my-connect-cluster
+# spec:
+#   class: io.debezium.connector.postgresql.PostgresConnector
+#   tasksMax: 1  
+#   config:  
+#     database.hostname:  postgres.postgres # <- servicename.namespace 
+#     database.port: 5432
+#     database.user: dbuser
+#     database.password: dbpasswd
+#     database.dbname: testdb
+#     database.server.name: dev_db
+#     table.include.list: public.products,public.entity,public.proj_rel
+#     plugin.name: pgoutput
+#     topic.creation.enable: true
+#     topic.creation.default.replication.factor: 1
+#     topic.creation.default.partitions: 1
+#     topic.creation.default.cleanup.policy: compact
+#     topic.creation.default.compression.type: lz4
+#     decimal.handling.mode: double
+
+#     # see https://docs.ksqldb.io/en/latest/tutorials/etl/#start-the-postgres-and-mongodb-debezium-source-connectors
+#     transforms: unwrap
+#     transforms.unwrap.type: io.debezium.transforms.ExtractNewRecordState
+#     transforms.unwrap.drop.tombstones: false
+#     transforms.unwrap.delete.handling.mode: rewrite

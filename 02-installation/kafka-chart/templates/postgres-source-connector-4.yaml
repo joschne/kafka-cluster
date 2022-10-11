@@ -1,0 +1,43 @@
+# # Inspired by
+# # https://github.com/gkoenig/strimzi-jaeger-eval/blob/main/KafkaConnect-Debezium-Postgresql.md
+
+# apiVersion: kafka.strimzi.io/v1beta2
+# kind: KafkaConnector
+# metadata:
+#   name: dev-db-source-connector-v4
+#   namespace: kafka
+#   labels: 
+#     strimzi.io/cluster: my-connect-cluster
+# spec:
+#   class: io.debezium.connector.postgresql.PostgresConnector
+#   tasksMax: 1  
+#   config:  
+#     database.hostname:  postgres.postgres # <- servicename.namespace 
+#     database.port: 5432
+#     database.user: dbuser
+#     database.password: dbpasswd
+#     database.dbname: testdb
+#     database.server.name: dev_db_v4
+#     table.include.list: public.products,public.entity,public.proj_rel
+#     plugin.name: pgoutput
+#     topic.creation.enable: true
+#     topic.creation.default.replication.factor: 1
+#     topic.creation.default.partitions: 1
+#     topic.creation.default.cleanup.policy: compact
+#     topic.creation.default.compression.type: lz4
+#     decimal.handling.mode: double
+
+
+#     key.converter: org.apache.kafka.connect.storage.StringConverter
+#     key.converter.schemas.enable: false
+    
+#     # register the value schema in schema registry
+#     value.converter: io.confluent.connect.avro.AvroConverter
+#     value.converter.schemas.enable: true
+#     value.converter.schema.registry.url: http://kafka-stack-cp-schema-registry:8081 
+ 
+#     # see https://docs.ksqldb.io/en/latest/tutorials/etl/#start-the-postgres-and-mongodb-debezium-source-connectors
+#     transforms: unwrap
+#     transforms.unwrap.type: io.debezium.transforms.ExtractNewRecordState
+#     transforms.unwrap.drop.tombstones: false
+#     transforms.unwrap.delete.handling.mode: rewrite

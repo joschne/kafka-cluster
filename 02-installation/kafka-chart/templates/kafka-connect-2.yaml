@@ -1,0 +1,66 @@
+# apiVersion: kafka.strimzi.io/v1beta2
+# kind: KafkaConnect
+# metadata:
+#   name: my-connect-cluster-2
+#   annotations:
+#   # use-connector-resources configures this KafkaConnect
+#   # to use KafkaConnector resources to avoid
+#   # needing to call the Connect REST API directly
+#     strimzi.io/use-connector-resources: "false"
+# spec:
+#   version: 3.1.0
+#   replicas: 1
+#   bootstrapServers: my-cluster-kafka-bootstrap:9093
+#   tls:
+#     trustedCertificates:
+#       - secretName: my-cluster-cluster-ca-cert
+#         certificate: ca.crt
+#   config:
+#     group.id: connect-cluster
+#     offset.storage.topic: connect-cluster-offsets
+#     config.storage.topic: connect-cluster-configs
+#     status.storage.topic: connect-cluster-status
+#     # -1 means it will use the default replication factor configured in the broker
+#     config.storage.replication.factor: -1
+#     offset.storage.replication.factor: -1
+#     status.storage.replication.factor: -1
+
+#   # image:  ghcr.io/joschne/kafka-http-sink-connector:1.0.18-snapshot
+#   template:
+#     pod:
+#       # Secret to download the image built as specified under build
+#       imagePullSecrets:
+#         - name: github-docker-push-secret
+
+#   # This starts a docker build container that
+#   # creates a new kafka-connect docker image
+#   # including the plugins in plugins
+#   build:
+#     output: # (2)
+#       type: docker
+#       # Location of built docker image
+#       image: ghcr.io/joschne/kafka-connect-2:latest
+#       # Secret to upload to registry (here a github PAT wirh packages.write permissions)
+#       pushSecret: github-docker-push-secret
+#     plugins: # (3)
+#       - name: debezium-postgres-connector
+#         artifacts:
+#           - type: jar
+#             url: https://repo1.maven.org/maven2/io/debezium/debezium-connector-postgres/1.9.2.Final/debezium-connector-postgres-1.9.2.Final.jar
+#             sha512sum: 0697c941eb2acd2f8235b4434c7027f2fd28b24a6259e57e9c5acdd44ad91779f72791ae9ebd33061468ad4ee48a9743e26be23fa10caa329cac9fdf912ffd8a
+#       - name: kafka-connect-avro-converter
+#         artifacts:
+#           - type: jar
+#             url: https://packages.confluent.io/maven/io/confluent/kafka-connect-avro-converter/7.1.1/kafka-connect-avro-converter-7.1.1.jar
+#             sha512sum: 3879d2f3cae17d9aa9517efec6e5e0d5b354ff28d709f6e1b8ad7124ec196029fc4a699ed45751def21f0614a3dce2c6d2757ec2af34fdacc740c84513b64801
+#       # - name: http-connector
+#       #   artifacts:
+#       #     - type: zip
+#       #       url: https://github.com/aiven/http-connector-for-apache-kafka/releases/download/v0.5.0/http-connector-for-apache-kafka-0.5.0.zip
+#       #       sha512sum: 2fa74d76d48ff282bf6417ea5af8d8cb41fdf92f6d71bd13f4793dc72df7bb92b5252ea0a178ec3b6576e20d51dad9246076a6a0353521756cbbba9acb27a0e2
+#       # - name: http-sink-aisantserver
+#       #   artifacts:
+#       #     - type: zip
+#       #       url: https://github.com/asaintsever/kafka-connect-http-sink/releases/download/v1.0.0/asaintsever-http-sink-connector-1.0.0.zip
+#       #       sha512sum: d9daac9739db8067f8d00aff04527c0a45a5372d5905352d343de46e3fb28dd75072ad2ffb3389e6406d243e9ccd53ddccace398706461e3d6bd25b5c9486ca7
+

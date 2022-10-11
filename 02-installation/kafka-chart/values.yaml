@@ -1,0 +1,83 @@
+kafka-ui:
+  envs:
+    config:
+      # find env vars here https://github.com/provectus/kafka-ui#-environment-variables
+      KAFKA_CLUSTERS_0_NAME: "my-cluster"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "http://my-cluster-kafka-bootstrap:9092"
+      KAFKA_CLUSTERS_0_ZOOKEEPER: "http://my-cluster-zookeeper-client:2181"
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: "http://my-connect-cluster-connect-api:8083"
+      KAFKA_CLUSTERS_0_KSQLDBSERVER: "http://kafka-stack-ksqldb-standalone:8088"
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://kafka-stack-cp-schema-registry:8081"
+# installed using blog post: https://ludusrusso.space/blog/2020/08/ksql-strimzi-k8s
+cp-schema-registry:
+  enabled: true
+  kafka:
+    bootstrapServers: "PLAINTEXT://my-cluster-kafka-bootstrap:9092"
+  kafkastore:
+    bootstrap:
+      servers: "PLAINTEXT://my-cluster-kafka-bootstrap:9092"
+
+# installed using blog post: https://ludusrusso.space/blog/2020/08/ksql-strimzi-k8s
+cp-ksql-server:
+  enabled: false
+  cp-schema-registry:
+    url: "http://kafka-stack-cp-schema-registry:8081"
+  kafka:
+    bootstrapServers: "PLAINTEXT://my-cluster-kafka-bootstrap:9092"
+  ksql:
+    headless: true
+  confluent:
+    support:
+      metrics:
+        enable: false
+
+
+
+
+## ------------------------------------------------------
+## KSQLDB Server Standalone
+## ------------------------------------------------------
+ksqldb-server:
+  enabled: true
+  image: confluentinc/ksqldb-server
+  imageTag: 0.26.0
+  ## Optionally specify an array of imagePullSecrets. Secrets must be manually created in the namespace.
+  ## https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
+  imagePullSecrets:
+  #  - name: "regcred"
+  heapOptions: "-Xms6G -Xmx6G"
+  # resources: 
+  #   requests:
+  #     cpu: 1
+  #     memory: 1Gi
+  #   limits:
+  #     cpu: 4
+  #     memory: 6Gi
+  ksql:
+    headless: false
+  confluent:
+    support:
+      metrics:
+        enable: false
+  ## You can list load balanced service endpoint, or list of all brokers (which is hard in K8s).  e.g.:
+  ## bootstrapServers: "PLAINTEXT://dozing-prawn-kafka-headless:9092"
+  kafka:
+    bootstrapServers: "PLAINTEXT://my-cluster-kafka-bootstrap:9092"
+
+  ## If the Kafka Chart is disabled a URL and port are required to connect
+  ## e.g. gnoble-panther-cp-schema-registry:8081
+  cp-schema-registry:
+    url: "http://kafka-stack-cp-schema-registry:8081"
+  prometheus:
+    jmx:
+      # resources: 
+      #   requests:
+      #     cpu: 10m
+      #     memory: 20Mi
+      #   limits:
+      #     cpu: 50m
+      #     memory: 40Mi
+
+  configurationOverrides:
+    "KSQL_CONNECT_URL": "http://my-connect-cluster-connect-api:8083"
+  nameOverride: "ksqldb-standalone"
